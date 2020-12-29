@@ -12,11 +12,54 @@
 enum { NOUGHTS, CROSSES, BORDER, EMPTY };
 enum { HUMANWIN = 4, COMPWIN, DRAW }; // 4, 5, 6, as they are not specified
 
+/*
+     x, x, x, x, x,
+     x, 6, 7, 8, x,
+	 x,11, o,13, x,
+	 x,16,17,18, x,
+	 x, x, x, x, x
+
+	horizontal => 11 + 1 => 12
+	vertical => 7 + 5 => 12
+	diagnal => 16 - 4 | 18 - 6 => 12
+*/
+const int Directions[4] = { 1, 5, 4, 6 };
+
 const int ConvertTo25[9] = {
     6, 7, 8,
     11, 12, 13,
     16, 17, 18
 };
+
+int getNumForDir(int startSQ, const int dir, const int *board, const int us) {
+    int found = 0;
+    while(board[startSQ] != BORDER) {
+        if(board[startSQ] != us) {
+            break;
+        }
+        found++;
+        startSQ += dir;
+    }
+    return found;
+}
+
+int findThreeInARow(const int *board, const int ourIndex, const int us) {
+    int dirIndex = 0;
+    int dir = 0;
+    int threeCount = 1;
+
+    for(dirIndex = 0; dirIndex < 4; dirIndex++) {
+        dir = Directions[dirIndex];
+        threeCount += getNumForDir(ourIndex + dir, dir, board, us);
+        threeCount += getNumForDir(ourIndex + dir * -1, dir * -1, board, us);
+
+        if(threeCount == 3) {
+            break;
+        }
+        threeCount = 1;
+    }
+    return threeCount;
+}
 
 void initializeBord(int *board) {
     int index = 0;
@@ -147,13 +190,28 @@ void runGame() {
             printBoard(&board[0]);
         }
 
+        /*
+            Side: 0
+            Side ^ 1 => Side: 1
+            if side is 0, then ^ would flip the value to 1. 
+        */
+        if(findThreeInARow(board, LastMoveMade, Side ^ 1) == 3) {
+            printf("--- Game Over ---\n");
+            GameOver = 1;
+            if(Side == NOUGHTS) {
+                printf("Computer Wins\n");
+            } else {
+                printf("Human Wins\n");
+            }
+        }
+
         if(!hasEmpty(board)) {
             printf("Game Over!\n");
             GameOver = 1;
             printf("It's a draw");
         }
     }
-
+    printBoard(&board[0]);
 }
 
 int main()

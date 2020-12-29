@@ -1,5 +1,6 @@
 # depslib dependency file v1.0
-1608849329 source:c:\users\vincent\desktop\tictactoe\c\tictaxtoec\main.c
+1609271631 source:c:\users\vincent\desktop\tictactoe\c\tictaxtoec\main.c
 	<stdio.h>
 	<stdlib.h>
+	<string.h>
 
