@@ -64,7 +64,7 @@ void makeMove(int *board, const int sq, const side) {
 int getComputerMove(const int *board) {
     int index = 0;
     int numFree = 0; // the number of empty cell
-    int availableMoves[0];
+    int availableMoves[9];
     int randMove = 0;
 
     for(index = 0; index < 9; ++index) {
@@ -110,8 +110,6 @@ int getHumanMove(const int *board) {
 
         move--; // indexing
 
-
-
         if(board[ConvertTo25[move]] != EMPTY) {
             move = -1;
             printf("The given cell number is not available\n");
@@ -143,7 +141,7 @@ void runGame() {
             Side = CROSSES;
         } else {
             // AI move
-            LastMoveMade = getHumanMove(&board[0]);
+            LastMoveMade = getComputerMove(&board[0]);
             makeMove(&board[0], LastMoveMade, Side);
             Side = NOUGHTS;
             printBoard(&board[0]);
