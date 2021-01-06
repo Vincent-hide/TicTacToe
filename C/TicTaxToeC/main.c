@@ -31,27 +31,36 @@ const int ConvertTo25[9] = {
     16, 17, 18
 };
 
-int getNumForDir(int startSQ, const int dir, const int *board, const int us) {
+const int InMiddle = 4;
+const int Corners[4] = { 0, 2, 6, 8 };
+
+int play = 0;
+int positions = 0;
+int maxPlay = 0;
+
+int getNumForDir(int LastMoveMade, const int dir, const int *board, const int Side, const int check) {
     int found = 0;
-    while(board[startSQ] != BORDER) {
-        if(board[startSQ] != us) {
+    while(board[LastMoveMade] != BORDER) {
+        if(board[LastMoveMade] != Side) {
             break;
         }
         found++;
-        startSQ += dir;
+        LastMoveMade += dir;
     }
     return found;
 }
 
-int findThreeInARow(const int *board, const int ourIndex, const int us) {
+int findThreeInARow(const int *board, const int LastMoveMade, const int Side) {
     int dirIndex = 0;
     int dir = 0;
     int threeCount = 1;
 
     for(dirIndex = 0; dirIndex < 4; dirIndex++) {
         dir = Directions[dirIndex];
-        threeCount += getNumForDir(ourIndex + dir, dir, board, us);
-        threeCount += getNumForDir(ourIndex + dir * -1, dir * -1, board, us);
+        // if the LastMoveMade is 12(the center) and dir is 5(horizontal line), it checks 17, 22
+        threeCount += getNumForDir(LastMoveMade + dir, dir, board, Side, 1);
+        // if the LastMoveMade is 12(the center) and dir is 5(horizontal line), it checks 7, 2
+        threeCount += getNumForDir(LastMoveMade + (dir * -1), dir * -1, board, Side, 0);
 
         if(threeCount == 3) {
             break;
@@ -59,6 +68,85 @@ int findThreeInARow(const int *board, const int ourIndex, const int us) {
         threeCount = 1;
     }
     return threeCount;
+}
+
+int findThreeInARowAllBoard(const int *board, const int Side) {
+    int threeFound = 0;
+    int index;
+    for(index=0; index<9; index++) {
+        if(board[ConvertTo25[index]]== Side) {
+            if(findThreeInARow(board, ConvertTo25[index], Side) == 3) {
+                threeFound = 1;
+                break;
+            }
+        }
+    }
+    return threeFound;
+}
+
+int evalForWin(const int *board, const int Side) {
+    if(findThreeInARowAllBoard(board, Side) != 0) {
+        return 1;
+    }
+    if(findThreeInARowAllBoard(board, Side ^ 1) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
+int miniMax(int *board, int side) {
+    int moveList[9];
+    int moveCount = 0;
+    int bestScore = -2;
+    int score = -2;
+    int bestMove = -1;
+    int move;
+    int index;
+
+    if(play > maxPlay) {
+        maxPlay = play;
+    }
+    positions++;
+
+    if(play > 0) {
+        score = evalForWin(board, side);
+        if(score != 0) {
+            return score;
+        }
+    }
+
+    for(index=0; index<9; index++) {
+        if(board[ConvertTo25[index]] == EMPTY) {
+            moveList[moveCount++] = ConvertTo25[index];
+        }
+    }
+
+    for(index=0; index<moveCount; index++) {
+        move = moveList[index];
+        board[move] = side;
+
+        play++;
+        score = -miniMax(board, side^1);
+
+        if(score > bestScore) {
+            bestScore = score;
+            bestMove = move;
+        }
+
+        board[move] = EMPTY;
+        play--;
+    }
+
+    if(moveCount == 0) {
+        bestScore = findThreeInARowAllBoard(board, side);
+    }
+
+    if(play!=0) {
+		return bestScore;
+	} else {
+		return bestMove;
+	}
+
 }
 
 void initializeBord(int *board) {
@@ -98,18 +186,76 @@ int hasEmpty(const int *board) {
     return 0;
 }
 
-void makeMove(int *board, const int sq, const side) {
-    board[sq] = side;
+int getWinningMove(int *board, const int Side) {
+    int ourMove = -1;
+    int winFound = 0;
+    int index = 0;
 
+    for(index = 0; index < 9; index++) {
+        if(board[ConvertTo25[index]] == EMPTY) {
+            ourMove = ConvertTo25[index];
+            board[ourMove] = Side;
+
+            if(findThreeInARow(board, ourMove, Side) == 3) {
+                winFound = 1;
+            }
+            board[ourMove] = EMPTY;
+            if(winFound == 1) {
+                return ourMove;
+            }
+            ourMove = -1;
+        };
+    }
+    return ourMove;
+}
+
+void makeMove(int *board, const int LastMoveMade, const Side) {
+    board[LastMoveMade] = Side;
+}
+
+int getNextBest(const int *board) {
+    int ourMove = ConvertTo25[InMiddle];
+    if(board[ourMove] == EMPTY) {
+        return ourMove;
+    }
+
+    int index = 0;
+    ourMove = -1;
+
+    for(index = 0; index < 4; index++) {
+        ourMove = ConvertTo25[Corners[index]];
+        if(board[ourMove] == EMPTY) {
+            return ourMove;
+        }
+        ourMove = -1;
+    }
+    return ourMove;
 }
 
 // for development stage: loop throgh all the calls. and store the idnex of the empty cell into availableMoves and randomly return the value stored in availableMoves.
-int getComputerMove(const int *board) {
+int getComputerMove(int *board, const int Side) {
     int index = 0;
     int numFree = 0; // the number of empty cell
     int availableMoves[9];
     int randMove = 0;
 
+    randMove = getWinningMove(board, Side);
+    if(randMove != -1) {
+        return randMove;
+    }
+
+    // Computer will prioritize to block you rather than wining over you
+    randMove = getWinningMove(board, Side ^ 1);
+    if(randMove != -1) {
+        return randMove;
+    }
+
+    randMove = getNextBest(board);
+    if(randMove != -1) {
+        return randMove;
+    }
+
+    randMove = 0;
     for(index = 0; index < 9; ++index) {
         if(board[ConvertTo25[index]] == EMPTY) {
             availableMoves[numFree++] = ConvertTo25[index];
@@ -120,6 +266,16 @@ int getComputerMove(const int *board) {
     return availableMoves[randMove];
 }
 
+
+int getComputerMoveMiniMax(int *board, const int side) {
+    play = 0;
+    positions = 0;
+    maxPlay = 0;
+    int best = miniMax(board, side);
+    printf("Finished searching positions: %d maxDepth: %d bestMove:%d\n", positions, maxPlay, best);
+    return best;
+}
+
 int getHumanMove(const int *board) {
     char userInput[4];
 
@@ -127,7 +283,7 @@ int getHumanMove(const int *board) {
     int move = -1;
 
     while(moveOk == 0) {
-        printf("Please enter a move form 1 to 9:");
+        printf("Please enter a move form 1 to 9: ");
         fgets(userInput, 3, stdin); // take the first 3 chars of the given string as an input
         fflush(stdin); // clear up a buffer
 
@@ -184,7 +340,7 @@ void runGame() {
             Side = CROSSES;
         } else {
             // AI move
-            LastMoveMade = getComputerMove(&board[0]);
+            LastMoveMade = getComputerMoveMiniMax(&board[0], Side);
             makeMove(&board[0], LastMoveMade, Side);
             Side = NOUGHTS;
             printBoard(&board[0]);
@@ -193,7 +349,7 @@ void runGame() {
         /*
             Side: 0
             Side ^ 1 => Side: 1
-            if side is 0, then ^ would flip the value to 1. 
+            if side is 0, then ^ would flip the value to 1.
         */
         if(findThreeInARow(board, LastMoveMade, Side ^ 1) == 3) {
             printf("--- Game Over ---\n");
