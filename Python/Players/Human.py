@@ -5,14 +5,14 @@ class Human(Player):
     super().__init__(letter)
 
   # returns the square/input if that is not taken yet
-  def get_move(self, game):
+  def get_move(self, tictactoe):
     valid_square = False
     val = None
     while not valid_square:
       square = input(self.letter + "\'s turn. Make a move [0-9]: ")
       try:
         val = int(square)
-        if val not in game.available_moves():
+        if val not in tictactoe.available_moves():
           raise ValueError
         else:
           valid_square = True

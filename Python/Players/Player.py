@@ -4,6 +4,6 @@ class Player:
     self.letter = letter
 
   # abstract method
-  def get_move(self, game):
+  def get_move(self, tictactoe):
     pass
 

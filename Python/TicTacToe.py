@@ -3,6 +3,9 @@ class TicTacToe:
     self.board = self.make_board()
     self.current_winner = None
 
+  def __str__(self):
+    return f"board {self.board}\n current winner{self.current_winner}"
+
   @staticmethod
   def make_board():
     return [' ' for _ in range(9)]
@@ -28,9 +31,11 @@ class TicTacToe:
     for row in box:
       print('| ' + ' | '.join(row) + ' |')
 
+  # returns true if there is a still empty square
   def empty_squares(self):
     return ' ' in self.board
 
+  # returns a number of a empty square. used to calculate the value in minimax
   def num_empty(self):
     return self.board.count(' ')
 
